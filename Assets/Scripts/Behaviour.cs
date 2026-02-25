@@ -8,9 +8,13 @@ public class Behaviour : MonoBehaviour
 
     public GameObject finishLine;
 
+    public GameObject powerUps;
+
     public NavMeshAgent agent;
 
-    public enum ActionState {IDLE,WORKING };
+    bool foundPower;
+
+    public enum ActionState {IDLE,WORKING,POWER };
     ActionState state = ActionState.IDLE;
 
     Node.Status treeStatus = Node.Status.RUNNING;
@@ -22,10 +26,10 @@ public class Behaviour : MonoBehaviour
         agent = GetComponent<NavMeshAgent>();
         tree = new BehaviourTree();
         Sequence finishRace = new Sequence("Go to the finish line!");
+        Sequence getPowerUp = new Sequence("Get Power up");
 
-
-        Leaf goToFinishLine = new Leaf("Go to Diamond", FinishRace);
-
+        Leaf goToFinishLine = new Leaf("Go to finish line", FinishRace);
+        //Leaf goToPowerUp = new Leaf("Go to power up", );
 
 
 
@@ -42,6 +46,11 @@ public class Behaviour : MonoBehaviour
     {
 
         return GoToLocation(finishLine.transform.position);
+    }
+    public Node.Status FindPowerUp()
+    {
+
+        return GetPowerUp(powerUps.transform.position);
     }
 
 
@@ -67,7 +76,40 @@ public class Behaviour : MonoBehaviour
         return Node.Status.RUNNING;
         
     }
+    Node.Status GetPowerUp(Vector3 destination) 
+    {
+        float distanceToTarget = Vector3.Distance(destination.normalized, this.transform.position);
+        if (foundPower == true)
+        {
+            agent.SetDestination(destination);
+            state = ActionState.POWER;
+            return Node.Status.RUNNING;
+        }
+        else if (Vector3.Distance(agent.pathEndPosition, destination) >= 2) 
+        {
+            state = ActionState.IDLE;
+            return Node.Status.FAILURE;
+        }
+        else if (distanceToTarget < 2)
+        {
+            state = ActionState.IDLE;
+            return Node.Status.SUCCESS;
+        }
+        return Node.Status.RUNNING;
 
+    }
+
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("PowerUp") == true) 
+        {
+
+            powerUps = other.GetComponent<GameObject>();
+            foundPower = true;
+        
+        }
+    }
 
     void Update()
     {
