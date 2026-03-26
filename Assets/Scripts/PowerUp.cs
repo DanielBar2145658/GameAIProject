@@ -2,19 +2,27 @@ using UnityEngine;
 
 public class PowerUp : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
+    public float speedMultiplier = 2f;
+    public float duration = 2f;
 
-    // Update is called once per frame
-    void Update()
+    private void OnTriggerEnter(Collider other)
     {
-        
-    }
-    private void OnCollisionEnter(Collision collision)
-    {
-        Destroy(this);
+        // Player
+        Player player = other.GetComponent<Player>();
+        if (player != null)
+        {
+            player.ApplySpeedBoost(speedMultiplier, duration);
+            gameObject.SetActive(false);
+            return;
+        }
+
+        // AI 
+        Behaviour ai = other.GetComponent<Behaviour>();
+        if (ai != null)
+        {
+            ai.ApplySpeedBoost(speedMultiplier, duration);
+            gameObject.SetActive(false);
+            return;
+        }
     }
 }

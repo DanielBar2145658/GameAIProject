@@ -119,4 +119,26 @@ public class Behaviour : MonoBehaviour
         
         }
     }
+    
+    private Coroutine currentBoost;
+    public float moveSpeed;
+
+    public void ApplySpeedBoost(float multiplier, float duration)
+    {
+        if (currentBoost != null)
+        {
+            StopCoroutine(currentBoost);
+        }
+
+        currentBoost = StartCoroutine(SpeedBoostRoutine(multiplier, duration));
+    }
+
+    private IEnumerator SpeedBoostRoutine(float multiplier, float duration)
+    {
+        moveSpeed *= multiplier;
+
+        yield return new WaitForSeconds(duration);
+
+        moveSpeed /= multiplier;
+    }
 }
