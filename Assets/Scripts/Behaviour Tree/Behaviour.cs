@@ -125,7 +125,6 @@ public class Behaviour : MonoBehaviour
     }
     
     private Coroutine currentBoost;
-    public float moveSpeed;
 
     public void ApplySpeedBoost(float multiplier, float duration)
     {
@@ -139,11 +138,11 @@ public class Behaviour : MonoBehaviour
 
     private IEnumerator SpeedBoostRoutine(float multiplier, float duration)
     {
-        moveSpeed *= multiplier;
+        agent.speed *= multiplier;
 
         yield return new WaitForSeconds(duration);
 
-        moveSpeed /= multiplier;
+        agent.speed /= multiplier;
     }
     
     bool ShouldGetPowerUp()

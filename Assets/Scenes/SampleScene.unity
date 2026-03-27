@@ -2772,7 +2772,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9142695529789063682, guid: 1905b819c6c8d5040975a13d01f3d25e, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -4513,7 +4513,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Behaviour
   finishLine: {fileID: 1050155831}
   agent: {fileID: 1995114324}
-  moveSpeed: 0
 --- !u!1001 &2010296823
 PrefabInstance:
   m_ObjectHideFlags: 0
