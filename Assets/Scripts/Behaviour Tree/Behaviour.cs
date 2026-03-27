@@ -2,197 +2,132 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
+
 public class Behaviour : MonoBehaviour
 {
     BehaviourTree tree;
-
     public GameObject finishLine;
-
     private GameObject targetPowerUp;
-
     public NavMeshAgent agent;
 
-    bool foundPower;
-
-    public enum ActionState {IDLE,WORKING,POWER };
+    public enum ActionState {IDLE, WORKING}
     ActionState state = ActionState.IDLE;
 
     Node.Status treeStatus = Node.Status.RUNNING;
-
-
+    private Coroutine currentBoost;
 
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
         tree = new BehaviourTree();
-        Sequence finishRace = new Sequence("Go to the finish line!");
-        Sequence getPowerUp = new Sequence("Get Power up");
 
-        Leaf goToFinishLine = new Leaf("Go to finish line", FinishRace);
-        //Leaf goToPowerUp = new Leaf("Go to power up", );
+      
+        Leaf goToPowerUp = new Leaf("Go to power-up", GoToPowerUp);
+        Leaf goToFinishLine = new Leaf("Go to finish line", GoToFinishLine);
 
+     
+        Selector root = new Selector("Root Selector");
+        root.AddChild(goToPowerUp);
+        root.AddChild(goToFinishLine);
 
-
-
-        finishRace.AddChild(goToFinishLine);
-        tree.AddChild(finishRace);
-
-
-        
-        
+        tree.AddChild(root);
     }
-
-    public Node.Status FinishRace() 
-    {
-        if (targetPowerUp == null || !targetPowerUp.activeInHierarchy)
-        {
-            targetPowerUp = null;
-        }
-
-        if (ShouldGetPowerUp())
-        {
-            return GoToLocation(targetPowerUp.transform.position);
-        }
-
-        return GoToLocation(finishLine.transform.position);
-    }
-   
-    public Node.Status FindPowerUp()
-    {
-
-        return GetPowerUp(targetPowerUp.transform.position);
-    }
-
-
-    Node.Status GoToLocation(Vector3 destination) 
-    {
-        float distanceToTarget = Vector3.Distance(destination, transform.position);
-        if (state == ActionState.IDLE)
-        {
-            agent.SetDestination(destination);
-            state = ActionState.WORKING;
-        }
-        else if (Vector3.Distance(agent.pathEndPosition, destination) >= 2)
-        {
-
-            state = ActionState.IDLE;
-            return Node.Status.FAILURE;
-        }
-        else if (distanceToTarget < 2) 
-        {
-            state = ActionState.IDLE;
-            return Node.Status.SUCCESS;
-        }
-        return Node.Status.RUNNING;
-        
-    }
-    Node.Status GetPowerUp(Vector3 destination) 
-    {
-        float distanceToTarget = Vector3.Distance(destination, transform.position);
-        if (foundPower == true)
-        {
-            agent.SetDestination(destination);
-            state = ActionState.POWER;
-            return Node.Status.RUNNING;
-        }
-        else if (Vector3.Distance(agent.pathEndPosition, destination) >= 2) 
-        {
-            state = ActionState.IDLE;
-            return Node.Status.FAILURE;
-        }
-        else if (distanceToTarget < 2)
-        {
-            state = ActionState.IDLE;
-            return Node.Status.SUCCESS;
-        }
-        return Node.Status.RUNNING;
-
-    }
-
-
-    
 
     void Update()
     {
         treeStatus = tree.Process();
-
         CheckForPowerUpPickup();
-        
+
+    
         if (targetPowerUp == null && state != ActionState.IDLE)
+            state = ActionState.IDLE;
+    }
+
+    #region Behavior Nodes
+    Node.Status GoToPowerUp()
+    {
+        if (targetPowerUp == null || !targetPowerUp.activeInHierarchy)
         {
+            targetPowerUp = FindClosestPowerUp();
+            if (targetPowerUp == null) return Node.Status.FAILURE;
+        }
+        
+        float distToPower = Vector3.Distance(transform.position, targetPowerUp.transform.position);
+        float distToFinish = Vector3.Distance(transform.position, finishLine.transform.position);
+        if (distToPower >= distToFinish) return Node.Status.FAILURE;
+
+        return GoToLocation(targetPowerUp.transform.position);
+    }
+
+    Node.Status GoToFinishLine()
+    {
+        return GoToLocation(finishLine.transform.position);
+    }
+
+    Node.Status GoToLocation(Vector3 destination)
+    {
+        float distance = Vector3.Distance(transform.position, destination);
+        
+        if (agent.destination != destination)
+            agent.SetDestination(destination);
+        
+        if (distance < 1.5f)
+        {
+            state = ActionState.IDLE;
+            return Node.Status.SUCCESS;
+        }
+
+        state = ActionState.WORKING;
+        return Node.Status.RUNNING;
+    }
+    #endregion
+
+    #region Power-Up Handling
+    void CheckForPowerUpPickup()
+    {
+        if (targetPowerUp == null) return;
+
+        float distance = Vector3.Distance(transform.position, targetPowerUp.transform.position);
+        if (distance < 1.5f)
+        {
+            ApplySpeedBoost(2f, 2f);
+            targetPowerUp.SetActive(false);
+            targetPowerUp = null;
             state = ActionState.IDLE;
         }
     }
-    
-    private Coroutine currentBoost;
 
-    public void ApplySpeedBoost(float multiplier, float duration)
-    {
-        if (currentBoost != null)
-        {
-            StopCoroutine(currentBoost);
-        }
-
-        currentBoost = StartCoroutine(SpeedBoostRoutine(multiplier, duration));
-    }
-
-    private IEnumerator SpeedBoostRoutine(float multiplier, float duration)
-    {
-        agent.speed *= multiplier;
-
-        yield return new WaitForSeconds(duration);
-
-        agent.speed /= multiplier;
-    }
-    
-    bool ShouldGetPowerUp()
-    {
-        targetPowerUp = FindClosestPowerUp();
-
-        if (targetPowerUp == null) return false;
-
-        float distToPower = Vector3.Distance(transform.position, targetPowerUp.transform.position);
-        float distToFinish = Vector3.Distance(transform.position, finishLine.transform.position);
-        
-        return distToPower < distToFinish;
-    }
-    
     GameObject FindClosestPowerUp()
     {
         GameObject[] powerUps = GameObject.FindGameObjectsWithTag("PowerUp");
-
         GameObject closest = null;
-        float minDistance = Mathf.Infinity;
+        float minDist = Mathf.Infinity;
 
         foreach (GameObject p in powerUps)
         {
             if (!p.activeInHierarchy) continue;
-
             float dist = Vector3.Distance(transform.position, p.transform.position);
-
-            if (dist < minDistance)
+            if (dist < minDist)
             {
-                minDistance = dist;
+                minDist = dist;
                 closest = p;
             }
         }
 
         return closest;
     }
-    
-    void CheckForPowerUpPickup()
+
+    public void ApplySpeedBoost(float multiplier, float duration)
     {
-        if (targetPowerUp == null) return;
-
-        float distance = Vector3.Distance(transform.position, targetPowerUp.transform.position);
-
-        if (distance < 1.5f)
-        {
-            ApplySpeedBoost(2f, 2f);
-            targetPowerUp.SetActive(false);
-            
-            targetPowerUp = null;
-            state = ActionState.IDLE;
-        }
+        if (currentBoost != null) StopCoroutine(currentBoost);
+        currentBoost = StartCoroutine(SpeedBoostRoutine(multiplier, duration));
     }
+
+    private IEnumerator SpeedBoostRoutine(float multiplier, float duration)
+    {
+        agent.speed *= multiplier;
+        yield return new WaitForSeconds(duration);
+        agent.speed /= multiplier;
+    }
+    #endregion
 }
