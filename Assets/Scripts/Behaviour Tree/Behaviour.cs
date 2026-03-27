@@ -8,7 +8,7 @@ public class Behaviour : MonoBehaviour
 
     public GameObject finishLine;
 
-    public GameObject powerUps;
+    private GameObject targetPowerUp;
 
     public NavMeshAgent agent;
 
@@ -44,19 +44,29 @@ public class Behaviour : MonoBehaviour
 
     public Node.Status FinishRace() 
     {
+        if (targetPowerUp == null || !targetPowerUp.activeInHierarchy)
+        {
+            targetPowerUp = null;
+        }
+
+        if (ShouldGetPowerUp())
+        {
+            return GoToLocation(targetPowerUp.transform.position);
+        }
 
         return GoToLocation(finishLine.transform.position);
     }
+   
     public Node.Status FindPowerUp()
     {
 
-        return GetPowerUp(powerUps.transform.position);
+        return GetPowerUp(targetPowerUp.transform.position);
     }
 
 
     Node.Status GoToLocation(Vector3 destination) 
     {
-        float distanceToTarget = Vector3.Distance(destination.normalized, this.transform.position);
+        float distanceToTarget = Vector3.Distance(destination, transform.position);
         if (state == ActionState.IDLE)
         {
             agent.SetDestination(destination);
@@ -78,7 +88,7 @@ public class Behaviour : MonoBehaviour
     }
     Node.Status GetPowerUp(Vector3 destination) 
     {
-        float distanceToTarget = Vector3.Distance(destination.normalized, this.transform.position);
+        float distanceToTarget = Vector3.Distance(destination, transform.position);
         if (foundPower == true)
         {
             agent.SetDestination(destination);
@@ -100,23 +110,17 @@ public class Behaviour : MonoBehaviour
     }
 
 
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.CompareTag("PowerUp") == true) 
-        {
-
-            powerUps = other.GetComponent<GameObject>();
-            foundPower = true;
-        
-        }
-    }
+    
 
     void Update()
     {
-        if (treeStatus == Node.Status.RUNNING) 
-        {
-            treeStatus = tree.Process();
+        treeStatus = tree.Process();
+
+        CheckForPowerUpPickup();
         
+        if (targetPowerUp == null && state != ActionState.IDLE)
+        {
+            state = ActionState.IDLE;
         }
     }
     
@@ -140,5 +144,56 @@ public class Behaviour : MonoBehaviour
         yield return new WaitForSeconds(duration);
 
         moveSpeed /= multiplier;
+    }
+    
+    bool ShouldGetPowerUp()
+    {
+        targetPowerUp = FindClosestPowerUp();
+
+        if (targetPowerUp == null) return false;
+
+        float distToPower = Vector3.Distance(transform.position, targetPowerUp.transform.position);
+        float distToFinish = Vector3.Distance(transform.position, finishLine.transform.position);
+        
+        return distToPower < distToFinish;
+    }
+    
+    GameObject FindClosestPowerUp()
+    {
+        GameObject[] powerUps = GameObject.FindGameObjectsWithTag("PowerUp");
+
+        GameObject closest = null;
+        float minDistance = Mathf.Infinity;
+
+        foreach (GameObject p in powerUps)
+        {
+            if (!p.activeInHierarchy) continue;
+
+            float dist = Vector3.Distance(transform.position, p.transform.position);
+
+            if (dist < minDistance)
+            {
+                minDistance = dist;
+                closest = p;
+            }
+        }
+
+        return closest;
+    }
+    
+    void CheckForPowerUpPickup()
+    {
+        if (targetPowerUp == null) return;
+
+        float distance = Vector3.Distance(transform.position, targetPowerUp.transform.position);
+
+        if (distance < 1.5f)
+        {
+            ApplySpeedBoost(2f, 2f);
+            targetPowerUp.SetActive(false);
+            
+            targetPowerUp = null;
+            state = ActionState.IDLE;
+        }
     }
 }
