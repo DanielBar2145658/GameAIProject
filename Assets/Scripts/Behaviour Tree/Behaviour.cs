@@ -42,8 +42,7 @@ public class Behaviour : MonoBehaviour
         if (targetPowerUp == null && state != ActionState.IDLE)
             state = ActionState.IDLE;
     }
-
-    #region Behavior Nodes
+    
     Node.Status GoToPowerUp()
     {
         if (targetPowerUp == null || !targetPowerUp.activeInHierarchy)
@@ -80,9 +79,8 @@ public class Behaviour : MonoBehaviour
         state = ActionState.WORKING;
         return Node.Status.RUNNING;
     }
-    #endregion
-
-    #region Power-Up Handling
+   
+    
     void CheckForPowerUpPickup()
     {
         if (targetPowerUp == null) return;
@@ -129,5 +127,4 @@ public class Behaviour : MonoBehaviour
         yield return new WaitForSeconds(duration);
         agent.speed /= multiplier;
     }
-    #endregion
 }
