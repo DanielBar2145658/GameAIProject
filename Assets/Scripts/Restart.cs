@@ -10,6 +10,9 @@ public class Restart : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        RestartGame();
+        if (other.CompareTag("Player") == true)
+        {
+            RestartGame(); 
+        }
     }
 }
