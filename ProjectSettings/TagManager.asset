@@ -7,6 +7,7 @@ TagManager:
   - PowerUp
   - AI
   - FinishLine
+  - Car
   layers:
   - Default
   - TransparentFX
