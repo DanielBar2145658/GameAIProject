@@ -67,9 +67,19 @@ public class Behaviour : MonoBehaviour
     {
         float distance = Vector3.Distance(transform.position, destination);
         
+        if (IsCarDangerous())
+        {
+            agent.isStopped = true;
+            return Node.Status.RUNNING;
+        }
+        else
+        {
+            agent.isStopped = false;
+        }
+
         if (agent.destination != destination)
             agent.SetDestination(destination);
-        
+
         if (distance < 1.5f)
         {
             state = ActionState.IDLE;
@@ -126,5 +136,26 @@ public class Behaviour : MonoBehaviour
         agent.speed *= multiplier;
         yield return new WaitForSeconds(duration);
         agent.speed /= multiplier;
+    }
+    
+    bool IsCarDangerous()
+    {
+        RaycastHit hit;
+
+        
+        Vector3 dir = agent.velocity.normalized;
+
+        if (dir == Vector3.zero)
+            dir = transform.forward; // fallback
+
+        if (Physics.Raycast(transform.position + Vector3.up * 0.5f, dir, out hit, 3f))
+        {
+            if (hit.collider.CompareTag("Car"))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
