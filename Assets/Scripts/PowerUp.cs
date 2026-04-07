@@ -17,7 +17,7 @@ public class PowerUp : MonoBehaviour
         }
 
         // AI 
-        Behaviour ai = other.GetComponent<Behaviour>();
+        AIBehaviour ai = other.GetComponent<AIBehaviour>();
         if (ai != null)
         {
             ai.ApplySpeedBoost(speedMultiplier, duration);

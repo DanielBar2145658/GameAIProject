@@ -10,6 +10,8 @@ public class Player : MonoBehaviour
     private Animator animator;
 
     private Coroutine currentBoost;
+    
+    Transform currentPlatform;
 
     void Awake()
     {
@@ -36,7 +38,22 @@ public class Player : MonoBehaviour
 
         
         dir.y = rigidBody.linearVelocity.y;
-        rigidBody.linearVelocity = dir;
+        Vector3 finalVelocity = dir;
+        
+        if (currentPlatform != null)
+        {
+            River mover = currentPlatform.GetComponent<River>();
+
+            if (mover != null)
+            {
+                float move = mover.speed * mover.direction;
+                finalVelocity.x += move;
+            }
+        }
+
+        finalVelocity.y = rigidBody.linearVelocity.y;
+
+        rigidBody.linearVelocity = finalVelocity;
 
         Vector3 facingDir = new Vector3(xInput, 0, zInput);
         if (facingDir.magnitude > 0)
@@ -62,5 +79,21 @@ public class Player : MonoBehaviour
         yield return new WaitForSeconds(duration);
 
         moveSpeed = baseSpeed;
+    }
+    
+    void OnCollisionEnter(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Log"))
+        {
+            currentPlatform = collision.transform;
+        }
+    }
+
+    void OnCollisionExit(Collision collision)
+    {
+        if (collision.transform == currentPlatform)
+        {
+            currentPlatform = null;
+        }
     }
 }
