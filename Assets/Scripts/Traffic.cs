@@ -30,4 +30,12 @@ public class Traffic : MonoBehaviour
             transform.position = new Vector3(maxX, transform.position.y, transform.position.z);
         }
     }
+    
+    void OnCollisionEnter(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            FindObjectOfType<FinishLine>().PlayerDied();
+        }
+    }
 }
