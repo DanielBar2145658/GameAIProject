@@ -36,6 +36,8 @@ public class AIBehaviour : MonoBehaviour
     {
         treeStatus = tree.Process();
         state = ActionState.WORKING;
+
+
     }
 
     Node.Status GoToFinishLine()
@@ -45,6 +47,11 @@ public class AIBehaviour : MonoBehaviour
 
     Node.Status GoToLocation(Vector3 destination)
     {
+if (!HasGroundAhead())
+{
+    agent.isStopped = true;
+    return Node.Status.RUNNING;
+}
         float distance = Vector3.Distance(transform.position, destination);
 
         if (IsCarDangerous())
@@ -201,4 +208,15 @@ public class AIBehaviour : MonoBehaviour
 
         return closest;
     }
+
+bool HasGroundAhead()
+{
+    Vector3 checkPos = transform.position + transform.forward * 1.2f;
+
+    return Physics.Raycast(
+        checkPos + Vector3.up * 0.5f,
+        Vector3.down,
+        2f
+    );
+}
 }
