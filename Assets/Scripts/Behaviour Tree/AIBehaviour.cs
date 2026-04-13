@@ -60,22 +60,37 @@ if (!HasGroundAhead())
             return Node.Status.RUNNING;
         }
 
-        if (IsInWaterDanger())
+       if (IsInWaterDanger())
+{
+    GameObject log = FindNearestLog();
+
+    if (log != null)
+    {
+        River mover = log.GetComponent<River>();
+
+        if (mover != null)
         {
-            GameObject log = FindNearestLog();
+            float predictionTime = 1.5f; 
 
-            if (log != null)
-            {
-                agent.isStopped = false;
-                agent.SetDestination(log.transform.position);
-            }
-            else
-            {
-                agent.isStopped = true;
-            }
+            float futureX = log.transform.position.x + (mover.speed * mover.direction * predictionTime);
 
-            return Node.Status.RUNNING;
+            Vector3 futurePos = new Vector3(
+                futureX,
+                log.transform.position.y,
+                log.transform.position.z
+            );
+
+            agent.isStopped = false;
+            agent.SetDestination(futurePos);
         }
+    }
+    else
+    {
+        agent.isStopped = true;
+    }
+
+    return Node.Status.RUNNING;
+}
 
         GameObject powerUp = FindClosestPowerUp();
 
